@@ -48,8 +48,10 @@ if "android.useAndroidX" not in p:
     p += "\nandroid.useAndroidX=true\n"
 props.write_text(p)
 
-# Keep R8 from stripping plugin classes used through reflection.
+# Some plugins (permission_handler) need a newer compileSdk than Flutter's
+# default. compileSdk only affects compilation, not which phones can install.
 gradle = android / "app/build.gradle.kts"
-if gradle.exists():
-    g = gradle.read_text()
-    print(g)
+g = gradle.read_text()
+g = g.replace("compileSdk = flutter.compileSdkVersion", "compileSdk = 37")
+gradle.write_text(g)
+print(g)
