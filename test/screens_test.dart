@@ -17,26 +17,25 @@ import 'package:walkfit/ui/progress_page.dart';
 import 'package:walkfit/ui/settings_page.dart';
 import 'package:walkfit/ui/today_page.dart';
 import 'package:walkfit/ui/walk_detail_page.dart';
+import 'package:walkfit/ui/walk_page.dart';
+import 'package:walkfit/tracker.dart';
 
 Future<void> _loadFonts() async {
-  final root = Platform.environment['FLUTTER_ROOT'];
-  if (root == null) return;
-  final dir = Directory('$root/bin/cache/artifacts/material_fonts');
-  if (!dir.existsSync()) return;
-  final roboto = FontLoader('Roboto');
-  for (final f in dir.listSync().whereType<File>()) {
-    final n = f.uri.pathSegments.last;
-    if (n.startsWith('Roboto-') && n.endsWith('.ttf')) {
-      roboto.addFont(Future.value(ByteData.sublistView(f.readAsBytesSync())));
+  Future<void> load(String family, Iterable<File> files) async {
+    final l = FontLoader(family);
+    for (final f in files) {
+      l.addFont(Future.value(ByteData.sublistView(f.readAsBytesSync())));
     }
-  }
-  await roboto.load();
-  final icons = File('${dir.path}/MaterialIcons-Regular.otf');
-  if (icons.existsSync()) {
-    final l = FontLoader('MaterialIcons')
-      ..addFont(Future.value(ByteData.sublistView(icons.readAsBytesSync())));
     await l.load();
   }
+
+  final assets = Directory('assets/fonts').listSync().whereType<File>().toList();
+  await load('Inter', assets.where((f) => f.path.contains('/Inter-')));
+  await load('InterDisplay', assets.where((f) => f.path.contains('/InterDisplay-')));
+  final root = Platform.environment['FLUTTER_ROOT'];
+  if (root == null) return;
+  final icons = File('$root/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+  if (icons.existsSync()) await load('MaterialIcons', [icons]);
 }
 
 void _seed() {
@@ -124,11 +123,23 @@ void main() {
     '07_walk_detail': () => WalkDetailPage(walk: AppState.instance.walks.first),
     '08_progress': () => const ProgressPage(),
     '09_settings': () => const SettingsPage(),
+    '10_walk_idle': () => const Scaffold(body: WalkPage()),
+    '11_walk_active': () {
+      final tr = WalkTracker.instance;
+      tr.points
+        ..clear()
+        ..addAll(AppState.instance.walks.first.points.take(40));
+      tr.distanceM = 2350;
+      tr.kcal = 98;
+      tr.startedAt = DateTime.now();
+      tr.status = WalkStatus.paused;
+      return const Scaffold(body: WalkPage());
+    },
   };
 
   for (final entry in screens.entries) {
     for (final b in [Brightness.light, Brightness.dark]) {
-      if (b == Brightness.dark && !entry.key.startsWith('03')) continue;
+      if (b == Brightness.dark && !(entry.key.startsWith('03') || entry.key.startsWith('11') || entry.key.startsWith('04'))) continue;
       testWidgets('${entry.key} ${b.name}', (tester) async {
         tester.view.physicalSize = const Size(1080, 2340);
         tester.view.devicePixelRatio = 2.625;

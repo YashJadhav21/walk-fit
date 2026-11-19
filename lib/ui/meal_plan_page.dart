@@ -19,7 +19,7 @@ class MealPlanPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('What to eat')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         children: [
           Text(
             'Vegetarian ideas (dairy, no egg) for your ${plan.intakeKcal} kcal day, '

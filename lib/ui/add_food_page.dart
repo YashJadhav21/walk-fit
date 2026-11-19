@@ -189,14 +189,17 @@ class _AddFoodPageState extends State<AddFoodPage> {
                               setState(() => _q = '');
                             },
                           ),
+                    filled: true,
+                    fillColor: cs.surfaceContainerLow,
                     border: const OutlineInputBorder(
+                        borderSide: BorderSide.none,
                         borderRadius: BorderRadius.all(Radius.circular(28))),
                   ),
                 ),
               ),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                   children: [
                     if (_q.trim().isEmpty) ...[
                       SizedBox(
@@ -506,7 +509,7 @@ class _AiResultSheetState extends State<_AiResultSheet> {
                         child: Column(children: [
                           TextField(
                             controller: i.serving,
-                            decoration: fieldDeco('Amount'),
+                            decoration: fieldDeco(context, 'Amount'),
                           ),
                           const SizedBox(height: 10),
                           Row(children: [
@@ -514,7 +517,7 @@ class _AiResultSheetState extends State<_AiResultSheet> {
                               child: TextField(
                                 controller: i.kcal,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                decoration: fieldDeco('Calories', suffix: 'kcal'),
+                                decoration: fieldDeco(context, 'Calories', suffix: 'kcal'),
                                 onChanged: (_) => setState(() {}),
                               ),
                             ),
@@ -523,7 +526,7 @@ class _AiResultSheetState extends State<_AiResultSheet> {
                               child: TextField(
                                 controller: i.protein,
                                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                decoration: fieldDeco('Protein', suffix: 'g'),
+                                decoration: fieldDeco(context, 'Protein', suffix: 'g'),
                               ),
                             ),
                           ]),
@@ -604,16 +607,16 @@ class _CustomFoodDialogState extends State<_CustomFoodDialog> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             TextFormField(
               controller: _name,
-              decoration: fieldDeco('Name'),
+              decoration: fieldDeco(context, 'Name'),
               validator: (v) => (v ?? '').trim().isEmpty ? 'Enter a name' : null,
             ),
             const SizedBox(height: 12),
-            TextFormField(controller: _serving, decoration: fieldDeco('Serving')),
+            TextFormField(controller: _serving, decoration: fieldDeco(context, 'Serving')),
             const SizedBox(height: 12),
             TextFormField(
               controller: _kcal,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: fieldDeco('Calories per serving', suffix: 'kcal'),
+              decoration: fieldDeco(context, 'Calories per serving', suffix: 'kcal'),
               validator: (v) {
                 final n = parseNum(v ?? '');
                 return n == null || n <= 0 || n > 5000 ? 'Enter calories' : null;
@@ -623,7 +626,7 @@ class _CustomFoodDialogState extends State<_CustomFoodDialog> {
             TextFormField(
               controller: _protein,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: fieldDeco('Protein (optional)', suffix: 'g'),
+              decoration: fieldDeco(context, 'Protein (optional)', suffix: 'g'),
             ),
           ]),
         ),

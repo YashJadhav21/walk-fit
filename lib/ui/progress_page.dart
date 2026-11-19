@@ -23,7 +23,7 @@ class ProgressPage extends StatelessWidget {
           controller: c,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: fieldDeco('Weight', suffix: 'kg'),
+          decoration: fieldDeco(context, 'Weight', suffix: 'kg'),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(d), child: const Text('Cancel')),
@@ -89,7 +89,7 @@ class ProgressPage extends StatelessWidget {
           final walkDays = days.where((d) => s.walksOn(d).isNotEmpty).length;
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 96),
             children: [
               Panel(
                 child: Column(
@@ -126,7 +126,7 @@ class ProgressPage extends StatelessWidget {
                       painter: _WeightChart(
                         s.weights,
                         p.goalKg,
-                        line: cs.primary,
+                        line: cs.onSurface,
                         grid: cs.outlineVariant,
                         text: cs.onSurfaceVariant,
                         goalColor: cs.tertiary,

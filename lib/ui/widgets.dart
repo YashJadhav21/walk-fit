@@ -1,27 +1,40 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 const tabular = [FontFeature.tabularFigures()];
 
-/// Flat outlined panel used for every grouped block.
+TextStyle numStyle(BuildContext context, double size,
+        {FontWeight weight = FontWeight.w700, Color? color}) =>
+    TextStyle(
+      fontFamily: 'InterDisplay',
+      fontSize: size,
+      fontWeight: weight,
+      letterSpacing: -size * 0.03,
+      height: 1.0,
+      fontFeatures: tabular,
+      color: color ?? Theme.of(context).colorScheme.onSurface,
+    );
+
+/// Flat rounded card (no border, no shadow).
 class Panel extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
+  final Color? color;
   const Panel(
       {super.key,
       required this.child,
-      this.padding = const EdgeInsets.all(16),
-      this.onTap});
+      this.padding = const EdgeInsets.all(20),
+      this.onTap,
+      this.color});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Material(
-      color: cs.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: cs.outlineVariant),
-      ),
+      color: color ?? cs.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(24),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -31,6 +44,7 @@ class Panel extends StatelessWidget {
   }
 }
 
+/// Small uppercase heading above a group.
 class SectionTitle extends StatelessWidget {
   final String text;
   final Widget? trailing;
@@ -38,16 +52,18 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+      padding: const EdgeInsets.fromLTRB(4, 28, 4, 10),
       child: Row(
         children: [
           Expanded(
-            child: Text(text,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            child: Text(text.toUpperCase(),
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.1,
+                    color: cs.onSurfaceVariant)),
           ),
           if (trailing != null) trailing!,
         ],
@@ -56,7 +72,23 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-/// Big number with a small label under it.
+class Label extends StatelessWidget {
+  final String text;
+  const Label(this.text, {super.key});
+  @override
+  Widget build(BuildContext context) => Text(
+        text.toUpperCase(),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.9,
+            color: Theme.of(context).colorScheme.onSurfaceVariant),
+      );
+}
+
+/// Big number + unit, small uppercase label under it.
 class Stat extends StatelessWidget {
   final String value;
   final String label;
@@ -71,34 +103,37 @@ class Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
-    final style = (large ? t.displaySmall : t.titleLarge)?.copyWith(
-        fontWeight: FontWeight.w600, fontFeatures: tabular, height: 1.1);
+    final size = large ? 40.0 : 24.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text.rich(
-          TextSpan(children: [
-            TextSpan(text: value, style: style),
-            if (unit != null)
-              TextSpan(
-                  text: ' $unit',
-                  style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-          ]),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text.rich(
+            TextSpan(children: [
+              TextSpan(text: value, style: numStyle(context, size)),
+              if (unit != null)
+                TextSpan(
+                    text: ' $unit',
+                    style: TextStyle(
+                        fontSize: large ? 16 : 13,
+                        fontWeight: FontWeight.w500,
+                        color: cs.onSurfaceVariant)),
+            ]),
+            maxLines: 1,
+          ),
         ),
-        const SizedBox(height: 2),
-        Text(label,
-            style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+        const SizedBox(height: 6),
+        Label(label),
       ],
     );
   }
 }
 
-/// "Label            120 / 300 kcal" + progress bar.
+/// "Label            120 / 300 kcal" + thin progress bar.
 class GoalBar extends StatelessWidget {
   final String label;
   final double value;
@@ -122,40 +157,41 @@ class GoalBar extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final frac = goal > 0 ? (value / goal) : 0.0;
     final over = overIsBad && value > goal;
-    final color = over ? cs.error : cs.primary;
+    final color = over ? cs.error : cs.onSurface;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Expanded(child: Text(label, style: t.bodyLarge)),
+            Expanded(
+                child: Text(label,
+                    style: t.bodyLarge?.copyWith(fontWeight: FontWeight.w500))),
             Text.rich(TextSpan(children: [
               TextSpan(
                   text: value.round().toString(),
-                  style: t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontFeatures: tabular,
-                      color: over ? cs.error : null)),
+                  style: numStyle(context, 18, color: over ? cs.error : null)),
               TextSpan(
                   text: ' / ${goal.round()} $unit',
-                  style: t.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant, fontFeatures: tabular)),
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: cs.onSurfaceVariant,
+                      fontFeatures: tabular)),
             ])),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(3),
           child: LinearProgressIndicator(
             value: frac.clamp(0.0, 1.0).toDouble(),
-            minHeight: 8,
+            minHeight: 6,
             color: color,
             backgroundColor: cs.surfaceContainerHighest,
           ),
         ),
         if (note != null) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(note!,
               style: t.bodySmall?.copyWith(
                   color: over ? cs.error : cs.onSurfaceVariant)),
@@ -165,14 +201,89 @@ class GoalBar extends StatelessWidget {
   }
 }
 
-InputDecoration fieldDeco(String label, {String? suffix, String? hint}) =>
-    InputDecoration(
-      labelText: label,
-      suffixText: suffix,
-      hintText: hint,
-      border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12))),
+/// Thin circular progress ring with content in the middle.
+class Ring extends StatelessWidget {
+  final double progress; // 0..1+
+  final double size;
+  final double stroke;
+  final Widget child;
+  final bool warn;
+  const Ring(
+      {super.key,
+      required this.progress,
+      required this.child,
+      this.size = 150,
+      this.stroke = 10,
+      this.warn = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _RingPainter(
+          progress: progress,
+          stroke: stroke,
+          track: cs.surfaceContainerHighest,
+          fill: warn ? cs.error : cs.onSurface,
+        ),
+        child: Center(child: child),
+      ),
     );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  final double progress, stroke;
+  final Color track, fill;
+  _RingPainter(
+      {required this.progress,
+      required this.stroke,
+      required this.track,
+      required this.fill});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset(stroke / 2, stroke / 2) &
+        Size(size.width - stroke, size.height - stroke);
+    final p = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, 0, math.pi * 2, false, p..color = track);
+    final sweep = progress.clamp(0.0, 1.0) * math.pi * 2;
+    if (sweep > 0) {
+      canvas.drawArc(rect, -math.pi / 2, sweep, false, p..color = fill);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _RingPainter old) =>
+      old.progress != progress || old.fill != fill || old.track != track;
+}
+
+InputDecoration fieldDeco(BuildContext context, String label,
+    {String? suffix, String? hint}) {
+  final cs = Theme.of(context).colorScheme;
+  OutlineInputBorder b(Color c, [double w = 1.5]) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(color: c, width: w));
+  return InputDecoration(
+    labelText: label,
+    suffixText: suffix,
+    hintText: hint,
+    filled: true,
+    fillColor: cs.surfaceContainerLow,
+    floatingLabelStyle: TextStyle(color: cs.onSurface),
+    border: b(Colors.transparent),
+    enabledBorder: b(Colors.transparent),
+    focusedBorder: b(cs.onSurface),
+    errorBorder: b(cs.error),
+    focusedErrorBorder: b(cs.error),
+  );
+}
 
 void toast(BuildContext context, String msg) {
   ScaffoldMessenger.of(context)
@@ -185,18 +296,21 @@ Future<bool> confirm(BuildContext context, String title, String body,
   final r = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      title: Text(title),
+      backgroundColor: Theme.of(c).colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: Text(title, style: Theme.of(c).textTheme.titleLarge),
       content: Text(body),
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(c, false),
             child: const Text('Cancel')),
         FilledButton(
-          style: destructive
-              ? FilledButton.styleFrom(
-                  backgroundColor: Theme.of(c).colorScheme.error,
-                  foregroundColor: Theme.of(c).colorScheme.onError)
-              : null,
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(88, 44),
+            backgroundColor: destructive ? Theme.of(c).colorScheme.error : null,
+            foregroundColor: destructive ? Theme.of(c).colorScheme.onError : null,
+          ),
           onPressed: () => Navigator.pop(c, true),
           child: Text(ok),
         ),

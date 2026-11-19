@@ -52,7 +52,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         children: [
           const SectionTitle('Profile'),
           Panel(
@@ -83,7 +83,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   obscureText: !_show,
                   autocorrect: false,
                   enableSuggestions: false,
-                  decoration: fieldDeco('Gemini API key').copyWith(
+                  decoration: fieldDeco(context, 'Gemini API key').copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(_show ? Icons.visibility_off : Icons.visibility),
                       onPressed: () => setState(() => _show = !_show),

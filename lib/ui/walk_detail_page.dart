@@ -55,7 +55,7 @@ class _WalkDetailPageState extends State<WalkDetailPage> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -123,7 +123,7 @@ class WalkHistoryPage extends StatelessWidget {
           final totalM = walks.fold(0.0, (s, w) => s + w.distanceM);
           final totalK = walks.fold(0.0, (s, w) => s + w.kcal);
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
             children: [
               Panel(
                 child: Row(children: [

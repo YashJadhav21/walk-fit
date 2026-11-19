@@ -1,21 +1,33 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path_provider/path_provider.dart';
-
 /// Tiny JSON file store in the app's private documents folder.
 class Store {
   static Directory? _dir;
 
   static Future<Directory> dir() async {
     if (_dir != null) return _dir!;
-    final base = await getApplicationDocumentsDirectory();
-    final d = Directory('${base.path}/walkfit');
+    final d = Directory('${_appDataDir()}/walkfit');
     if (!await d.exists()) await d.create(recursive: true);
     final routes = Directory('${d.path}/routes');
     if (!await routes.exists()) await routes.create(recursive: true);
     _dir = d;
     return d;
+  }
+
+  /// The app's private data folder, found without any plugin.
+  /// On Android the system temp dir is <data>/cache, so its parent is the
+  /// app's own data directory (/data/user/0/<package>). Same folder that
+  /// path_provider's "documents" directory uses (app_flutter).
+  static String _appDataDir() {
+    for (final base in ['/data/user/0/com.yash.walkfit', '/data/data/com.yash.walkfit']) {
+      if (Platform.isAndroid && Directory(base).existsSync()) return '$base/app_flutter';
+    }
+    final tmp = Directory.systemTemp.path;
+    if (Platform.isAndroid && tmp.endsWith('/cache')) {
+      return '${Directory(tmp).parent.path}/app_flutter';
+    }
+    return tmp;
   }
 
   static Future<File> _file(String name) async =>

@@ -69,7 +69,7 @@ class _FoodPageState extends State<FoodPage> {
           final plan = s.plan!;
           final eaten = s.kcalEatenOn(key);
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
             children: [
               Row(children: [
                 IconButton(
@@ -88,17 +88,34 @@ class _FoodPageState extends State<FoodPage> {
               const SizedBox(height: 4),
               Panel(
                 child: Column(children: [
-                  GoalBar(
-                    label: 'Calories',
-                    value: eaten,
-                    goal: plan.intakeKcal.toDouble(),
-                    unit: 'kcal',
-                    overIsBad: true,
-                    note: eaten <= plan.intakeKcal
-                        ? '${(plan.intakeKcal - eaten).round()} kcal left'
-                        : '${(eaten - plan.intakeKcal).round()} kcal over budget',
+                  Row(children: [
+                    Expanded(
+                      child: Stat(
+                          value: '${eaten.round()}',
+                          unit: '/ ${plan.intakeKcal} kcal',
+                          label: 'Eaten',
+                          large: true),
+                    ),
+                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text('${(plan.intakeKcal - eaten).abs().round()}',
+                          style: numStyle(context, 24,
+                              color: eaten > plan.intakeKcal ? cs.error : null)),
+                      const SizedBox(height: 6),
+                      Label(eaten > plan.intakeKcal ? 'Over' : 'Left'),
+                    ]),
+                  ]),
+                  const SizedBox(height: 14),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: plan.intakeKcal > 0
+                          ? (eaten / plan.intakeKcal).clamp(0.0, 1.0).toDouble()
+                          : 0,
+                      minHeight: 6,
+                      color: eaten > plan.intakeKcal ? cs.error : null,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 22),
                   GoalBar(
                     label: 'Protein',
                     value: s.proteinOn(key),

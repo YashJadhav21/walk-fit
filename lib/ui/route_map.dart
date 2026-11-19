@@ -4,19 +4,29 @@ import 'package:latlong2/latlong.dart';
 
 import '../models.dart';
 
-/// OpenStreetMap base layer (free, no API key).
-Widget osmTiles() => TileLayer(
-      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-      userAgentPackageName: 'com.yash.walkfit',
-      maxNativeZoom: 19,
-    );
+/// Free greyscale basemap (CARTO Positron / Dark Matter, OpenStreetMap data).
+/// No API key needed.
+Widget mapTiles(BuildContext context) {
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  return TileLayer(
+    urlTemplate:
+        'https://{s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png',
+    subdomains: const ['a', 'b', 'c', 'd'],
+    retinaMode: RetinaMode.isHighDensity(context),
+    userAgentPackageName: 'com.yash.walkfit',
+    maxNativeZoom: 20,
+    tileProvider: NetworkTileProvider(
+      cachingProvider: const DisabledMapCachingProvider(),
+    ),
+  );
+}
 
-Widget osmAttribution() => const SimpleAttributionWidget(
-      source: Text('OpenStreetMap contributors'),
+Widget mapAttribution() => const SimpleAttributionWidget(
+      source: Text('OpenStreetMap · CARTO'),
     );
 
 /// One polyline per segment so paused gaps are not joined.
-List<Polyline> routeLines(List<TrackPoint> pts, Color color) {
+List<Polyline> routeLines(List<TrackPoint> pts, Color color, Color border) {
   final bySeg = <int, List<LatLng>>{};
   for (final p in pts) {
     bySeg.putIfAbsent(p.seg, () => []).add(LatLng(p.lat, p.lng));
@@ -26,29 +36,58 @@ List<Polyline> routeLines(List<TrackPoint> pts, Color color) {
       if (seg.length >= 2)
         Polyline(
           points: seg,
-          strokeWidth: 6,
+          strokeWidth: 5,
           color: color,
           borderStrokeWidth: 2,
-          borderColor: Colors.white,
+          borderColor: border,
         ),
   ];
 }
 
-Marker dotMarker(LatLng at, Color color, {double size = 20}) => Marker(
-      point: at,
-      width: size,
-      height: size,
+/// Current-position dot: solid centre with a soft halo.
+Marker meMarker(BuildContext context, LatLng at) {
+  final cs = Theme.of(context).colorScheme;
+  return Marker(
+    point: at,
+    width: 44,
+    height: 44,
+    child: Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: cs.onSurface.withValues(alpha: 0.14),
+      ),
+      alignment: Alignment.center,
       child: Container(
+        width: 18,
+        height: 18,
         decoration: BoxDecoration(
-          color: color,
+          color: cs.onSurface,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)],
+          border: Border.all(color: cs.surface, width: 3),
         ),
       ),
-    );
+    ),
+  );
+}
 
-/// Static map of a finished walk, zoomed to fit the route.
+/// Start (hollow) and finish (solid) markers.
+Marker endMarker(BuildContext context, LatLng at, {required bool start}) {
+  final cs = Theme.of(context).colorScheme;
+  return Marker(
+    point: at,
+    width: 16,
+    height: 16,
+    child: Container(
+      decoration: BoxDecoration(
+        color: start ? cs.surface : cs.onSurface,
+        shape: BoxShape.circle,
+        border: Border.all(color: start ? cs.onSurface : cs.surface, width: 3),
+      ),
+    ),
+  );
+}
+
+/// Map of a finished walk, zoomed to fit the route.
 class RoutePreview extends StatelessWidget {
   final List<TrackPoint> points;
   final bool interactive;
@@ -66,19 +105,20 @@ class RoutePreview extends StatelessWidget {
             style: TextStyle(color: cs.onSurfaceVariant)),
       );
     }
-    final fit = ll.length >= 2 &&
-        LatLngBounds.fromPoints(ll).northEast != LatLngBounds.fromPoints(ll).southWest;
+    final b = LatLngBounds.fromPoints(ll);
+    final fit = ll.length >= 2 && b.northEast != b.southWest;
     return FlutterMap(
       options: MapOptions(
         initialCenter: ll.first,
         initialZoom: 16,
         initialCameraFit: fit
             ? CameraFit.bounds(
-                bounds: LatLngBounds.fromPoints(ll),
-                padding: const EdgeInsets.all(36),
+                bounds: b,
+                padding: const EdgeInsets.all(40),
                 maxZoom: 18,
               )
             : null,
+        backgroundColor: cs.surfaceContainerHighest,
         interactionOptions: InteractionOptions(
           flags: interactive
               ? InteractiveFlag.all & ~InteractiveFlag.rotate
@@ -86,13 +126,13 @@ class RoutePreview extends StatelessWidget {
         ),
       ),
       children: [
-        osmTiles(),
-        PolylineLayer(polylines: routeLines(points, cs.primary)),
+        mapTiles(context),
+        PolylineLayer(polylines: routeLines(points, cs.onSurface, cs.surface)),
         MarkerLayer(markers: [
-          dotMarker(ll.first, Colors.green.shade600, size: 16),
-          if (ll.length > 1) dotMarker(ll.last, Colors.red.shade600, size: 16),
+          endMarker(context, ll.first, start: true),
+          if (ll.length > 1) endMarker(context, ll.last, start: false),
         ]),
-        osmAttribution(),
+        mapAttribution(),
       ],
     );
   }

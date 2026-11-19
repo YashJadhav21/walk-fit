@@ -105,7 +105,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
             TextFormField(
               controller: _name,
               textCapitalization: TextCapitalization.words,
-              decoration: fieldDeco('Name (optional)'),
+              decoration: fieldDeco(context, 'Name (optional)'),
             ),
             const SizedBox(height: 16),
             Text('Sex', style: t.labelLarge),
@@ -124,7 +124,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                 child: TextFormField(
                   controller: _age,
                   keyboardType: TextInputType.number,
-                  decoration: fieldDeco('Age', suffix: 'yrs'),
+                  decoration: fieldDeco(context, 'Age', suffix: 'yrs'),
                   validator: (v) => _range(v, 14, 90, 'age'),
                 ),
               ),
@@ -134,7 +134,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                   controller: _height,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: fieldDeco('Height', suffix: 'cm'),
+                  decoration: fieldDeco(context, 'Height', suffix: 'cm'),
                   validator: (v) => _range(v, 120, 220, 'height'),
                 ),
               ),
@@ -146,7 +146,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                   controller: _weight,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: fieldDeco('Current weight', suffix: 'kg'),
+                  decoration: fieldDeco(context, 'Current weight', suffix: 'kg'),
                   validator: (v) => _range(v, 30, 250, 'weight'),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -157,7 +157,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                   controller: _goal,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: fieldDeco('Goal weight', suffix: 'kg'),
+                  decoration: fieldDeco(context, 'Goal weight', suffix: 'kg'),
                   validator: (v) => _range(v, 30, 250, 'goal'),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -221,39 +221,33 @@ class _ChoiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final fg = selected ? cs.surface : cs.onSurface;
+    final sub = selected ? cs.surface.withValues(alpha: 0.7) : cs.onSurfaceVariant;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: selected ? cs.primaryContainer : cs.surfaceContainerLow,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: selected ? cs.primary : cs.outlineVariant),
-        ),
+        color: selected ? cs.onSurface : cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             child: Row(children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.copyWith(fontWeight: FontWeight.w500)),
-                    Text(subtitle,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: cs.onSurfaceVariant)),
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600, color: fg)),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: TextStyle(fontSize: 13, color: sub)),
                   ],
                 ),
               ),
               Icon(selected ? Icons.check_circle : Icons.circle_outlined,
-                  color: selected ? cs.primary : cs.outline),
+                  color: selected ? cs.surface : cs.outline),
             ]),
           ),
         ),
@@ -274,6 +268,31 @@ class PlanReviewPage extends StatefulWidget {
 
 class _PlanReviewPageState extends State<PlanReviewPage> {
   late Profile p = widget.profile;
+  bool _saving = false;
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    final nav = Navigator.of(context);
+    try {
+      final weightChanged = AppState.instance.profile?.weightKg != p.weightKg;
+      await AppState.instance
+          .saveProfile(p, logWeight: widget.firstRun || weightChanged);
+      if (nav.canPop()) nav.popUntil((r) => r.isFirst);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      await showDialog<void>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Could not save'),
+          content: Text('$e'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c), child: const Text('OK')),
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -355,14 +374,7 @@ class _PlanReviewPageState extends State<PlanReviewPage> {
           const SizedBox(height: 28),
           FilledButton(
             style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-            onPressed: () async {
-              final nav = Navigator.of(context);
-              final weightChanged =
-                  AppState.instance.profile?.weightKg != p.weightKg;
-              await AppState.instance
-                  .saveProfile(p, logWeight: widget.firstRun || weightChanged);
-              nav.popUntil((r) => r.isFirst);
-            },
+            onPressed: _saving ? null : _save,
             child: Text(widget.firstRun ? 'Start using WalkFit' : 'Save plan'),
           ),
         ],

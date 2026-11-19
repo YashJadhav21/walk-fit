@@ -53,5 +53,14 @@ props.write_text(p)
 gradle = android / "app/build.gradle.kts"
 g = gradle.read_text()
 g = g.replace("compileSdk = flutter.compileSdkVersion", "compileSdk = 37")
+# Turn off R8 code shrinking: it can strip plugin classes that are only
+# reached via JNI/reflection and break the release build at runtime.
+g = g.replace(
+    'signingConfig = signingConfigs.getByName("debug")',
+    'signingConfig = signingConfigs.getByName("debug")\n            isMinifyEnabled = false\n            isShrinkResources = false',
+    1,
+)
+assert "isMinifyEnabled = false" in g, "could not disable minify"
+
 gradle.write_text(g)
 print(g)
