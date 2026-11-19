@@ -55,7 +55,9 @@ jobs:
 
       - name: Screenshots (layout check)
         continue-on-error: true
-        run: flutter test --update-goldens test/screens_test.dart
+        run: |
+          flutter test --update-goldens test/screens_test.dart || true
+          cd test/goldens && zip -q ../../out/screenshots.zip *.png
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -76,5 +78,8 @@ jobs:
           body: |
             Download **WalkFit.apk** below on your Android phone and open it to install.
             (Allow "Install unknown apps" for your browser when asked.)
-          files: out/WalkFit.apk
+          files: |
+            out/WalkFit.apk
+            out/screenshots.zip
+          fail_on_unmatched_files: false
           make_latest: true
