@@ -42,11 +42,17 @@ class MealPlanPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            idea.items.map((e) => '${fmtNum(e.$2, 2)} ${e.$1.name}').join(' + '),
-                            style: t.bodyLarge,
-                          ),
-                          const SizedBox(height: 2),
+                          for (final (f, q) in idea.items)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2),
+                              child: Text.rich(TextSpan(children: [
+                                TextSpan(text: f.name, style: t.bodyLarge),
+                                TextSpan(
+                                    text: '  ${q == 1 ? '' : '${fmtNum(q, 2)} × '}${f.serving}',
+                                    style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                              ])),
+                            ),
+                          const SizedBox(height: 4),
                           Text(
                             '${idea.kcal.round()} kcal · ${idea.protein.round()} g protein',
                             style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant),

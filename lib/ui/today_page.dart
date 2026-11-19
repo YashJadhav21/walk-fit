@@ -36,7 +36,8 @@ class TodayPage extends StatelessWidget {
         final secs = s.walkSecondsOn(day) + liveSec;
         final protein = s.proteinOn(day);
         final left = plan.intakeKcal - eaten;
-        final deficitNow = plan.tdee + walked - eaten;
+        // Projected end-of-day deficit, assuming the full food budget is eaten.
+        final deficitNow = plan.tdee + walked - (eaten > plan.intakeKcal ? eaten : plan.intakeKcal);
         final greeting = now.hour < 12
             ? 'Good morning'
             : now.hour < 17
@@ -125,12 +126,12 @@ class TodayPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       GoalBar(
-                        label: 'Estimated deficit today',
+                        label: 'Projected deficit today',
                         value: deficitNow.clamp(0.0, 99999.0).toDouble(),
                         goal: plan.dailyDeficit,
                         unit: 'kcal',
-                        note: 'Your daily burn (${plan.tdee.round()}) + walking − food eaten. '
-                            'It goes down as you log meals.',
+                        note: 'Assumes you eat your full budget. Walking raises it; '
+                            'eating over budget lowers it.',
                       ),
                     ],
                   ),
