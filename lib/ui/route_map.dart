@@ -2,28 +2,65 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../app_state.dart';
 import '../models.dart';
 
-/// Free greyscale basemap (CARTO Positron / Dark Matter, OpenStreetMap data).
-/// No API key needed.
+/// CARTO basemap key. Comes from the CARTO_KEY build secret
+/// (--dart-define) or from Settings in the app. Never stored in the repo.
+const _buildCartoKey = String.fromEnvironment('CARTO_KEY');
+String get cartoKey {
+  final user = AppState.instance.mapKey.trim();
+  return user.isNotEmpty ? user : _buildCartoKey;
+}
+
+/// Greyscale basemap: CARTO Positron (light) / Dark Matter (dark) when a
+/// key is set; otherwise OpenStreetMap's standard tiles turned greyscale.
 Widget mapTiles(BuildContext context) {
   final dark = Theme.of(context).brightness == Brightness.dark;
+  final key = cartoKey;
+  if (key.isNotEmpty) {
+    return TileLayer(
+      urlTemplate:
+          'https://basemaps.cartocdn.com/rastertiles/${dark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png?key=$key',
+      retinaMode: RetinaMode.isHighDensity(context),
+      userAgentPackageName: 'com.yash.walkfit',
+      maxNativeZoom: 20,
+      tileProvider: NetworkTileProvider(
+        cachingProvider: const DisabledMapCachingProvider(),
+      ),
+    );
+  }
   return TileLayer(
-    urlTemplate:
-        'https://{s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png',
-    subdomains: const ['a', 'b', 'c', 'd'],
-    retinaMode: RetinaMode.isHighDensity(context),
+    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     userAgentPackageName: 'com.yash.walkfit',
-    maxNativeZoom: 20,
+    maxNativeZoom: 19,
     tileProvider: NetworkTileProvider(
       cachingProvider: const DisabledMapCachingProvider(),
+    ),
+    tileBuilder: (context, tile, _) => ColorFiltered(
+      colorFilter: ColorFilter.matrix(dark ? _invertGrey : _grey),
+      child: tile,
     ),
   );
 }
 
-Widget mapAttribution() => const SimpleAttributionWidget(
-      source: Text('OpenStreetMap · CARTO'),
-    );
+const _grey = <double>[
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0, 0, 0, 1, 0,
+];
+const _invertGrey = <double>[
+  -0.2126, -0.7152, -0.0722, 0, 235,
+  -0.2126, -0.7152, -0.0722, 0, 235,
+  -0.2126, -0.7152, -0.0722, 0, 235,
+  0, 0, 0, 1, 0,
+];
+
+String get mapCredit =>
+    cartoKey.isNotEmpty ? '© OpenStreetMap · CARTO' : '© OpenStreetMap contributors';
+
+Widget mapAttribution() => SimpleAttributionWidget(source: Text(mapCredit));
 
 /// One polyline per segment so paused gaps are not joined.
 List<Polyline> routeLines(List<TrackPoint> pts, Color color, Color border) {

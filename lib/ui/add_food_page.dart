@@ -95,16 +95,30 @@ class _AddFoodPageState extends State<AddFoodPage> {
     }
     setState(() => _asking = true);
     try {
-      final foods = await Gemini.estimate(AppState.instance.geminiKey, q);
+      final foods = await Gemini.estimate(AppState.instance.geminiKey, q,
+          preferredModel: AppState.instance.geminiModel);
       if (!mounted) return;
       await _showAiResults(foods);
     } on GeminiException catch (e) {
-      if (mounted) toast(context, e.message);
+      if (mounted) _showError(e.message);
     } catch (e) {
       if (mounted) toast(context, 'Something went wrong: $e');
     } finally {
       if (mounted) setState(() => _asking = false);
     }
+  }
+
+  void _showError(String msg) {
+    showDialog<void>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Gemini could not answer'),
+        content: Text(msg),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('OK')),
+        ],
+      ),
+    );
   }
 
   Future<void> _showAiResults(List<AiFood> foods) async {

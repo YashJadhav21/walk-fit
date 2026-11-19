@@ -17,6 +17,8 @@ class AppState extends ChangeNotifier {
   List<FoodItem> customFoods = [];
   List<WeightEntry> weights = []; // oldest first
   String geminiKey = '';
+  String geminiModel = ''; // '' = choose automatically
+  String mapKey = ''; // CARTO key entered in Settings (optional)
 
   Plan? get plan => profile == null ? null : computePlan(profile!);
 
@@ -52,6 +54,8 @@ class AppState extends ChangeNotifier {
     final s = await Store.read('settings.json');
     if (s is Map<String, dynamic>) {
       geminiKey = (s['geminiKey'] ?? '') as String;
+      geminiModel = (s['geminiModel'] ?? '') as String;
+      mapKey = (s['mapKey'] ?? '') as String;
     }
     loaded = true;
     notifyListeners();
@@ -86,12 +90,29 @@ class AppState extends ChangeNotifier {
     customFoods = [];
     weights = [];
     geminiKey = '';
+    geminiModel = '';
+    mapKey = '';
     notifyListeners();
   }
 
   Future<void> setGeminiKey(String key) async {
     geminiKey = key.trim();
-    await Store.write('settings.json', {'geminiKey': geminiKey});
+    await _saveSettings();
+  }
+
+  Future<void> setGeminiModel(String model) async {
+    geminiModel = model;
+    await _saveSettings();
+  }
+
+  Future<void> setMapKey(String key) async {
+    mapKey = key.trim();
+    await _saveSettings();
+  }
+
+  Future<void> _saveSettings() async {
+    await Store.write('settings.json',
+        {'geminiKey': geminiKey, 'geminiModel': geminiModel, 'mapKey': mapKey});
     notifyListeners();
   }
 

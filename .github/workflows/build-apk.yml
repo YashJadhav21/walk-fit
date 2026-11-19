@@ -48,7 +48,7 @@ jobs:
 
       - name: Build APK
         run: |
-          flutter build apk --release --target-platform android-arm,android-arm64 --build-number=${{ github.run_number }} --build-name=1.0.${{ github.run_number }}
+          flutter build apk --release --target-platform android-arm,android-arm64 --build-number=${{ github.run_number }} --build-name=1.0.${{ github.run_number }} --dart-define=CARTO_KEY=${{ secrets.CARTO_KEY }}
           mkdir -p out
           cp build/app/outputs/flutter-apk/app-release.apk out/WalkFit.apk
           ls -la out

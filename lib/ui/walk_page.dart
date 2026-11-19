@@ -250,7 +250,7 @@ class _WalkPageState extends State<WalkPage> {
     final cs = Theme.of(context).colorScheme;
     final top = MediaQuery.of(context).padding.top;
     return ListenableBuilder(
-      listenable: tr,
+      listenable: Listenable.merge([tr, AppState.instance]),
       builder: (context, _) {
         final fix = tr.lastFix;
         final cur = fix != null && tr.active
@@ -344,7 +344,7 @@ class _WalkPageState extends State<WalkPage> {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 6, right: 6),
-                    child: Text('© OpenStreetMap · CARTO',
+                    child: Text(mapCredit,
                         style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
                   ),
                 ],
