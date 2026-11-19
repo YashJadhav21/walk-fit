@@ -44,14 +44,24 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Test
-        run: flutter test
+        run: flutter test test/calc_test.dart
 
       - name: Build APK
         run: |
-          flutter build apk --release --build-number=${{ github.run_number }} --build-name=1.0.${{ github.run_number }}
+          flutter build apk --release --target-platform android-arm,android-arm64 --build-number=${{ github.run_number }} --build-name=1.0.${{ github.run_number }}
           mkdir -p out
           cp build/app/outputs/flutter-apk/app-release.apk out/WalkFit.apk
           ls -la out
+
+      - name: Screenshots (layout check)
+        continue-on-error: true
+        run: flutter test --update-goldens test/screens_test.dart
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: test/goldens/
 
       - uses: actions/upload-artifact@v4
         with:

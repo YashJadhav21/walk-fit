@@ -14,7 +14,7 @@ Future<void> main() async {
   runApp(const WalkFitApp());
 }
 
-ThemeData _theme(Brightness b) {
+ThemeData appTheme(Brightness b) {
   final scheme = ColorScheme.fromSeed(
     seedColor: const Color(0xFF1E7A5A),
     brightness: b,
@@ -41,8 +41,8 @@ class WalkFitApp extends StatelessWidget {
     return MaterialApp(
       title: 'WalkFit',
       debugShowCheckedModeBanner: false,
-      theme: _theme(Brightness.light),
-      darkTheme: _theme(Brightness.dark),
+      theme: appTheme(Brightness.light),
+      darkTheme: appTheme(Brightness.dark),
       themeMode: ThemeMode.system,
       home: ListenableBuilder(
         listenable: AppState.instance,
