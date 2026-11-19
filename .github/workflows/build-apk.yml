@@ -1,0 +1,70 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android project
+        run: |
+          flutter --version
+          flutter create --platforms=android --org com.yash --project-name walkfit .
+          python3 tool/patch_android.py
+          rm -f test/widget_test.dart
+
+      - name: Use the app's fixed signing key (so updates install over old versions)
+        run: |
+          mkdir -p ~/.android
+          cp android_overlay/debug.keystore ~/.android/debug.keystore
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Test
+        run: flutter test
+
+      - name: Build APK
+        run: |
+          flutter build apk --release --build-number=${{ github.run_number }} --build-name=1.0.${{ github.run_number }}
+          mkdir -p out
+          cp build/app/outputs/flutter-apk/app-release.apk out/WalkFit.apk
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WalkFit-apk
+          path: out/WalkFit.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: WalkFit 1.0.${{ github.run_number }}
+          body: |
+            Download **WalkFit.apk** below on your Android phone and open it to install.
+            (Allow "Install unknown apps" for your browser when asked.)
+          files: out/WalkFit.apk
+          make_latest: true
